@@ -391,6 +391,51 @@ measurement error, so a null result would not be distinguishable from insufficie
 n=5 it is 3.5 SE away. `test_scripts/aggregate_test3.py` prints this headroom on every run and
 flags it when thin.
 
+### First run in — seed 42, and what it cost us to learn ⚠️ **2026-09-06**
+
+Seed 42 was re-run with warmup restored. **It reproduces the original procedure, and it does not
+reproduce the original number.** Both facts matter.
+
+| epoch | original (Table 1's run) | seed 42, warmup | Δ | seed 42, no warmup | Δ |
+|---:|---:|---:|---:|---:|---:|
+| **1** | **86.45** | **86.4725** | **+0.02** | 87.5852 | +1.14 |
+| 2 | 87.39 | 88.0103 | +0.62 | 88.3791 | +0.99 |
+| 3 | 88.84 | 88.0728 | −0.77 | 88.4353 | −0.40 |
+| 4 | **89.19** ← best | **88.9854** ← best | −0.20 | 88.9167 | −0.27 |
+| 5 | 89.04 | 88.8479 | −0.19 | **88.9417** ← best | −0.10 |
+| 6 | 88.86 | 88.8979 | +0.04 | 88.6041 | −0.26 |
+| 7 | — | — | — | 88.8417 | — |
+
+**Epoch 1 settles the config question.** It runs before divergence compounds, so it reflects the
+learning-rate schedule almost purely: the warmup run lands **0.0225pp** from the original, the
+no-warmup run **1.1352pp** away. Best epoch 4 and early stop at 6 in both, against 5 and 7 without
+warmup. The schedule now matches.
+
+**Final accuracy came in at 87.7569%, 0.5123pp below Table 1's 88.2692%** — same seed, same
+verified procedure. Best validation differed by 0.205pp and **amplified 2.5× on test**, the same
+validation/test divergence §4.3 records for CodeBERT+DFG. `manual_seed` does not control cuDNN
+reduction order or the GPU the session lands on.
+
+> **The check that flagged it was wrong, and the error is instructive.** It compared *final test
+> accuracy* against Table 1 with a 0.30pp band. Replayed against both runs, that check **fails the
+> correct configuration and rates the broken one as closer** (0.51pp vs 0.26pp). It has been
+> replaced with an epoch-1 validation comparison against 86.45, which separates the two by **50×**
+> (0.02 vs 1.14). Verify a run at its start, where the schedule dominates, not at its finish, where
+> nondeterminism does.
+
+**This raises the noise floor, and that is now the study's most consequential open number.** Two
+runs of an identical procedure differing by 0.512pp implies σ√2 ≈ 0.5, so σ ≈ 0.36pp — against the
+0.131pp the no-warmup trio suggested. That trio ran back-to-back in one week and never sampled
+cross-session hardware variation, so it measured something narrower than replication.
+
+It is a single comparison and must not be quoted as a variance estimate. But if σ is near 0.36pp
+rather than 0.131pp, **Table 2's 0.410pp GCB delta falls inside seed noise**, and the paper's
+conclusion becomes the cleaner one: no backbone shows a difference distinguishable from
+run-to-run variation. That outcome supports the thesis rather than threatening it.
+
+It also sharpens the case for five seeds. At n=3 the test fails if the true sd exceeds 0.180pp —
+a threshold this finding suggests we may already be above.
+
 **Known limitation either way.** Any n text seeds are compared against a *single* GCB+DFG
 checkpoint, which is itself one draw from a distribution. The fully controlled design puts
 seeds on both arms (~95 GPU hours) and is out of scope; it belongs in Limitations.
