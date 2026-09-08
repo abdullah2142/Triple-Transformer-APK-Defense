@@ -1,0 +1,59 @@
+Test 3 -- Multi-Seed Robustness
+==============================================================================
+Seeds found : 5  (7, 42, 123, 2025, 2718)
+Target      : 5  (pre-registered 2026-09-06, PAPER.md 3.3a)
+
+  seed   accuracy   ROC-AUC      F1      FN      FP  epochs  stop
+     7   87.9834%    0.9549  0.8749   1,363     865       8  early stopping at epoch 8
+    42   87.7569%    0.9575  0.8757   1,159   1,111       6  early stopping at epoch 6
+   123   87.9510%    0.9574  0.8756   1,293     941       6  early stopping at epoch 6
+  2025   88.1614%    0.9588  0.8770   1,325     870       6  early stopping at epoch 6
+  2718   87.7838%    0.9568  0.8744   1,270     995       6  early stopping at epoch 6
+
+mean 87.9273%   sample sd 0.1644pp   range 0.4045pp
+sd is itself uncertain: +/-0.0581pp (35% relative) at n=5
+
+One-sample t-test: mean(text seeds) vs GCB+DFG checkpoint (87.8593%)
+------------------------------------------------------------------------------
+  effect      +0.0680pp
+  t(4)       0.925     critical 2.776     p = 0.4074
+  verdict     not significant at 0.05
+  headroom    the test fails if the true sd exceeds 0.0548pp; observed 0.1644pp (0.33x)
+
+Per-sample: how much does the SEED alone move classifications?
+------------------------------------------------------------------------------
+              pair    differ       %   |b-c|        p
+           7 vs 42     1,446   7.80%      42    0.281
+          7 vs 123     1,378   7.43%       6    0.893
+         7 vs 2025     1,351   7.29%      33    0.384
+         7 vs 2718     1,411   7.61%      37    0.338
+         42 vs 123     1,280   6.90%      36    0.328
+        42 vs 2025     1,263   6.81%      75    0.037
+        42 vs 2718     1,239   6.68%       5    0.910
+       123 vs 2025     1,187   6.40%      39    0.270
+       123 vs 2718     1,253   6.76%      31    0.397
+      2025 vs 2718     1,238   6.68%      70    0.050
+
+  all 5 seeds agree on 15,852 samples (85.50%)
+  at least one dissents on 2,689 (14.50%)
+
+  For scale, test-8 reports GCB text vs GCB+DFG at 1,298 samples
+  classified differently (7.00%), |b-c| = 76, p = 0.037. If the seed
+  pairs above are the same magnitude, the architecture is not moving
+  more predictions than a reseed does -- only moving them more
+  consistently in one direction, which is what McNemar tests.
+
+Each seed against the SAME GCB+DFG checkpoint
+------------------------------------------------------------------------------
+  seed   accuracy      delta   |b-c|        p  significant?
+     7   87.9834%    +0.124pp      23    0.567  no
+    42   87.7569%    -0.102pp      19    0.624  no
+   123   87.9510%    +0.092pp      17    0.668  no
+  2025   88.1614%    +0.302pp      56    0.143  no
+  2718   87.7838%    -0.075pp      14    0.714  no
+ Tbl 1   88.2692%    +0.410pp      76    0.037  YES
+
+  Warmup checked: every seed above matches the 10% warmup schedule
+  the DFG checkpoint used, so the two arms are comparable.
+
+Provenance: test_scripts/aggregate_test3.py over results/test3 (5 seeds)
