@@ -172,8 +172,37 @@ def main():
           f'under-powered; see the headroom line. ***')
     w('')
 
-    warm = [s for s in sorted(runs)
-            if 'warmup' not in json.dumps(runs[s]['config']).lower()]
+    # -- warmup provenance ---------------------------------------------------
+    # The results JSON carries no warmup field: the notebooks never recorded
+    # one. Warmup is therefore detected from epoch-1 validation accuracy, which
+    # separates the two configurations cleanly, with no overlap across the nine
+    # runs to date:
+    #     10% warmup : 85.77 85.78 86.13 86.45 86.47 86.58   (max 86.58)
+    #     no warmup  : 87.05 87.13 87.59                     (min 87.05)
+    # A 0.47pp gap. Warmup holds the LR near zero for the first tenth of
+    # training, so it DELAYS early progress -- a HIGH epoch-1 means the
+    # schedule was missing. That was the bug that cost three runs; see
+    # results/superseded/test3_nowarmup/README.md. Boundary at the midpoint.
+    #
+    # This replaces an earlier check that looked for the string 'warmup' in the
+    # config dict. No config dict has ever contained it, so that check silently
+    # matched everything and was never read.
+    WARMUP_EPOCH1_MAX = 86.8
+    no_warmup = []
+    for s in sorted(runs):
+        h = runs[s].get('history') or []
+        if h:
+            e1 = h[0]['val_acc'] * 100
+            if e1 > WARMUP_EPOCH1_MAX:
+                no_warmup.append((s, e1))
+    if no_warmup:
+        w('*** WARMUP MISMATCH -- these seeds look like no-warmup runs: ***')
+        for s, e1 in no_warmup:
+            w(f'      seed {s}: epoch-1 val {e1:.4f}% > {WARMUP_EPOCH1_MAX}%')
+        w('    Their accuracy is biased LOW by ~0.26pp against the warmup DFG')
+        w('    checkpoint -- the same order as the effect under test. Exclude')
+        w('    them or re-run; do not mix the two configurations.')
+        w('')
     w(f'{"seed":>6} {"accuracy":>10} {"ROC-AUC":>9} {"F1":>7} {"FN":>7} {"FP":>7} {"epochs":>7}  stop')
     for s in sorted(runs):
         r = runs[s]
@@ -261,10 +290,14 @@ def main():
                 w(f'{"Tbl 1":>6} {TABLE1_TEXT:9.4f}% {TABLE1_TEXT-DFG_ACC:+9.3f}pp '
                   f'{76:7d} {0.037:8.3f}  YES')
                 w('')
-                w('  CHECK THE WARMUP FIELD before reading this table. Comparing a')
-                w('  non-warmup text model against the warmup DFG checkpoint handicaps')
-                w('  the text arm by ~0.26pp -- the same order as the effect under test.')
-                w('  See results/superseded/test3_nowarmup/README.md.')
+                if no_warmup:
+                    w('  *** The WARMUP MISMATCH above applies to this table too:')
+                    w('  a non-warmup text model against the warmup DFG checkpoint')
+                    w('  handicaps the text arm by ~0.26pp -- the same order as the')
+                    w('  effect under test. See results/superseded/test3_nowarmup/. ***')
+                else:
+                    w('  Warmup checked: every seed above matches the 10% warmup schedule')
+                    w('  the DFG checkpoint used, so the two arms are comparable.')
                 w('')
 
     w('Provenance: test_scripts/aggregate_test3.py over '
