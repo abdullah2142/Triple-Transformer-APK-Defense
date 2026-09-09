@@ -66,21 +66,31 @@ UniXcoder text-only by choice, 2026-08-31; it has never been a DFG model, which 
 
 ## The claim came out stronger
 
-| | Before | After the 2026-08-12 reruns |
-|---|---|---|
-| DFG effect | reversed on CodeBERT, contradicting the claim | **all three backbones favour text-only** |
-| Consistency | "no consistent benefit" — a shrug | **fewer FN, more FP, lower ROC-AUC in all three** |
-| Early stopping | never fired | fires in all four runs |
-| Scanner | believed to contradict the null-DFG finding | already text-only; no contradiction |
+| | Before | After the 2026-08-12 reruns | After Table 3, 2026-09-09 |
+|---|---|---|---|
+| DFG effect | reversed on CodeBERT, contradicting the claim | all three backbones favour text-only | **none of the three margins survives seed noise** |
+| Consistency | "no consistent benefit" — a shrug | fewer FN, more FP, lower ROC-AUC in all three | **one uniform finding, with a measured resolution (sd 0.1644pp)** |
+| The FN/FP trade | read as a property of DFG | read as a property of DFG | **shown to be a threshold setting — reachable on text-only for free (§3.2a)** |
+| Early stopping | never fired | fires in all four runs | unchanged |
+| Scanner | believed to contradict the null-DFG finding | already text-only; no contradiction | unchanged |
 
 You now have a cleaner version of the paper you set out to write. The corpus, the pipeline, the
 mechanism and the venue framing are untouched.
 
+**2026-09-09 note.** The last column cost ~50 GPU-hours and *removed* the paper's only
+statistically significant within-backbone result. That is the right trade. The claim it replaces
+— "DFG significantly harms GraphCodeBERT" — rested on a single training run that Table 3 shows
+sits 2.08 sd above its own procedure's mean. What replaces it is weaker as a headline and much
+harder to attack: **no backbone differs from run-to-run variation, and we measured the
+variation.** A reviewer who reruns any of this will find what we report.
+
 ## What is actually left
 
-Of the open decisions in §1.3, only **two change a number** — D7 (batch mismatch, 1 GPU run) and
-D2 (Table 3's protocol, 3 runs). **D4, D5 and D8 are "state it plainly in the paper"**, not
-"redo the work". Plus the six evaluation re-runs in §1.1, which were always part of the plan.
+Of the open decisions in §1.3, only **one still changes a number** — D7 (batch mismatch, 1 GPU
+run). D2 closed on 2026-09-09: Table 3 was re-measured over five cold-start seeds, and it
+**removed** a number rather than adding one — Table 2's GCB significance claim (§3.3a). **D4, D5
+and D8 are "state it plainly in the paper"**, not "redo the work". Plus the six evaluation
+re-runs in §1.1, which were always part of the plan.
 
 ---
 
@@ -97,19 +107,19 @@ D2 (Table 3's protocol, 3 runs). **D4, D5 and D8 are "state it plainly in the pa
 | 4 | Re-run test-2 | ✅ **done 2026-08-20** — 18,541 filtered, all six checkpoints confirmed |
 | 5 | Re-run test-8 | ✅ **done 2026-08-20** — **Table 2b's artifact collapsed** |
 | 6 | Re-run test-5 | ✅ **done 2026-08-19** — chart via `make_baseline_chart.py` |
-| 7 | Re-run test-3 ×3 seeds, **or** relabel Table 3 as the 5-epoch config | ⬜ decision (§4.3) |
+| 7 | Re-run test-3 ×5 cold-start seeds | ✅ **done 2026-09-09** — ~50 GPU-h. Table 3 re-measured; **the GCB delta did not survive** (§3.3a) |
 
-**Cost to finish**: 6 evaluation re-runs, plus 3 more GPU runs if Table 3 is re-measured and 1 if
-D7 is closed by retraining.
+**Cost to finish**: 6 evaluation re-runs, plus 1 GPU run if D7 is closed by retraining. Table 3
+is done (5 cold-start seeds, 2026-09-09).
 
 ## 1.2 What the paper can and cannot claim today
 
 | Claim | Evidence | Status |
 |---|---|---|
-| **DFG provides no consistent benefit** | within-backbone comparisons, Table 2 | ✅ **safe** — the core finding survives everything below |
-| DFG lowers accuracy **and** ROC-AUC on all three backbones | Table 2 | ✅ **restored 2026-08-12** — the CodeBERT reversal was an artifact of the truncated text arm plus an FP32/FP16 mismatch; both fixed, and it reversed back (§3.2) |
-| DFG trades false negatives for false positives | Table 2 | ✅ consistent in all three backbones |
-| Training stability ±0.10% | test-3 | ❌ **withdrawn 2026-09-04** — warm-started from our own fine-tuned checkpoint, so it is not fine-tuning seed variance and is biased low (§3.3a). Re-run pending |
+| **DFG provides no consistent benefit** | within-backbone comparisons, Tables 2–3 | ✅ **safe, and now stronger** — no backbone differs from run-to-run variation (§3.3a) |
+| DFG lowers accuracy **and** ROC-AUC on all three backbones | Table 2 | ⚠️ **weakened 2026-09-09** — the *direction* holds on all three, but no accuracy delta survives seed noise; the GCB row's p = 0.037 is withdrawn (§3.2, §3.3a). ROC-AUC deltas were already flat |
+| DFG trades false negatives for false positives | Table 2 | ⚠️ **reframed 2026-09-09** — the trade is real and uniform, but it is a **threshold setting**: every text seed reaches DFG's recall at the same FP cost by moving its cutoff (§3.2a) |
+| Training stability ±0.16pp | test-3, 5 cold-start seeds | ✅ **measured 2026-09-09** — mean 87.9273%, sd 0.1644pp, range 0.4045pp (§3.3). Replaces the withdrawn warm-start ±0.10% |
 | Transformers beat TF-IDF | test-5 | ✅ both on 18,541: baselines 83.68/84.83 vs transformers 87.52–88.34 |
 | Cross-architecture gap (Table 2b) | test-8 | ✅ **resolved** — collapsed to +0.34%, p=0.106. Retire *"model choice matters more than DFG"* (§3.4) |
 | Per-source generalisation (Table 4) | test-4 | ✅ **re-run 2026-08-20** on GCB text-only, filtered (§3.5) |
@@ -125,7 +135,7 @@ everything in Part 5.
 | # | Decision | Blocks | §  |
 |---|---|---|---|
 | ~~D1~~ | ~~Epoch ceiling~~ — **settled 2026-08-12**: all four CodeBERT/GCB runs on 10 / 2, early stopping fired in each. UniXcoder remains at 5 / 2, internally consistent | — | §4.3 |
-| **D2** 🔄 | ~~Table 3: re-run at the new ceiling, or label it as the 5-epoch config~~ — **decided 2026-09-04: re-run.** `test_scripts/test_3_multiseed/test-3-seed{42,123,2025}.ipynb` are built and split-verified; three Kaggle sessions pending. Also fixes a warm-start defect the old notebook had (§3.3a) | Table 3 | §3.3a |
+| ~~D2~~ | ~~Table 3: re-run at the new ceiling~~ — **closed 2026-09-09**: five cold-start seeds run (~50 GPU-h). Table 3 re-measured at sd 0.1644pp, and **Table 2's GCB delta did not survive** (§3.3a) | — | §3.3a |
 | ~~D3~~ | ~~Scanner ships GCB+DFG~~ — **retired 2026-08-12: the premise was false.** It ran GraphCodeBERT **text-only** and contains no DFG code at all. *Superseded 2026-08-31: the scanner was moved to UniXcoder text-only (§5.6); the point that it was never a DFG model stands* | — | §5.5 |
 | ~~D4~~ | ~~Filtered vs unfiltered Table 1~~ — **settled 2026-08-20**: Table 1 is the filtered 18,541 from test-2; `results/models/*.txt` are unfiltered per-model figures and must not be mixed in | — | §3.1 |
 | D5 | Sequence lengths differ between the arms of two backbones — disclose, or retrain to match | Tables 1–2, Section 4 | §4.3 |
@@ -247,8 +257,9 @@ convergence — not any individual number — is the paper's substantive observa
 
 > ⚠️ **The best-model ordering flipped again on filtering.** On the unfiltered set GraphCodeBERT
 > text-only led at 89.23% with UniXcoder at 89.08%; filtered, UniXcoder leads 88.3447% to 88.2692%.
-> The gap either way is well inside the ±0.10% seed noise floor, so **do not claim a best model on
-> accuracy alone.** §5.6's choice of GraphCodeBERT text-only for the deployment experiments rests
+> The gap either way (0.0755pp) is far inside the **±0.1644pp seed noise floor** measured in
+> Table 3 — indeed inside a single model's 0.4045pp range across five seeds — so **do not claim a
+> best model on accuracy alone.** §5.6's choice of GraphCodeBERT text-only for the deployment experiments rests
 > on architectural coherence and on it being what the scanner ships, not on it topping the table.
 
 ## 3.2 Table 2 — DFG effect per backbone
@@ -262,17 +273,89 @@ duplicate-filtered 18,541 set; p-values from test-8, 2026-08-20.
 | GraphCodeBERT | 88.2692% | 87.8593% | +0.410% | +0.0013 | −240 | +316 | **0.037** |
 | UniXcoder | 88.3447% | 88.3124% | +0.032% | −0.0001 | −124 | +130 | 0.879 |
 
-**Text-only wins all three on accuracy, but only GraphCodeBERT significantly.** CodeBERT and
-UniXcoder are statistically indistinguishable, and UniXcoder's is a rounding error.
+> ⚠️ **The GCB row's p = 0.037 no longer stands.** Table 3's five cold-start seeds put the
+> text arm's own spread at sd 0.1644pp with a 0.4045pp range, and the mean of five runs beats
+> GCB+DFG by only **+0.0680pp (p = 0.4074)**. The 0.410pp in this table is the gap between *one
+> high text draw* and *one DFG draw*, not an architecture effect. See §3.3a.
 
-**The consistent, reportable effect is the operating-point shift, not the accuracy loss.** DFG
-reduces false negatives in all three backbones (−59, −240, −124) and raises false positives in all
-three (+89, +316, +130). That trade is uniform even where the accuracy delta is noise. This is the
-cleanest statement available:
+**Corrected reading: no backbone shows a difference distinguishable from run-to-run variation.**
 
-> DFG-aware attention does not improve discrimination on decompiled code. It shifts the operating
+| Backbone | Δ Accuracy (single runs) | status against seed noise |
+|---|:---:|---|
+| CodeBERT | +0.162% | inside noise (p = 0.409 even before Table 3) |
+| GraphCodeBERT | +0.410% | **inside noise** — five-seed mean gives +0.068%, p = 0.407 |
+| UniXcoder | +0.032% | inside noise, and a rounding error regardless |
+
+All three ROC-AUC deltas were already flat (+0.0013, +0.0015, −0.0001). Table 3 now says the
+accuracy deltas are flat too. The three backbones tell one consistent story rather than one
+outlier plus two nulls, which is a **stronger** result than the paper previously claimed.
+
+**The false-negative trade is real but it is a calibration difference, not a capability.** DFG
+reduces false negatives in all three backbones (−59, −240, −124) and raises false positives in
+all three (+89, +316, +130), uniformly. That shift survives seed noise — GCB+DFG's FN of 1,054
+sits below all five text runs (1,159–1,363) and its FP of 1,197 above all five (865–1,111). But
+§3.2a shows the shift is reachable on the text-only model by moving one threshold, at no cost.
+It is where the model sits on its ROC curve, not the curve itself.
+
+This is the cleanest statement the evidence supports:
+
+> DFG-aware attention does not improve discrimination on decompiled code. Accuracy and ROC-AUC
+> are indistinguishable from run-to-run variation on all three backbones. It shifts the operating
 > point toward recall — consistently fewer false negatives at consistently more false positives —
-> while accuracy and ROC-AUC stay flat or fall slightly.
+> but that operating point is reachable on the text-only model with a threshold change, so the
+> shift is a property of where the decision boundary happens to fall, not of what the model can
+> discriminate.
+
+## 3.2a The FN/FP trade is a threshold setting ✅ **new, 2026-09-09**
+
+Every number in Tables 1, 2 and 2b is scored at a **fixed 0.50** cutoff. Verified two ways: no
+threshold-selection logic exists anywhere in the repo (no `best_threshold`, no sweep loops), and
+the `argmax` the training notebooks use is identical to `p₁ > 0.5` — 0 disagreements across all
+18,541 samples, with `p₀ + p₁ = 1.0` throughout. The 0.45 in test-6, test-7b, test-9 and the
+scanner is a deployment choice applied only there, never to the comparison tables.
+
+A fixed threshold makes the comparison fair. It also makes it **blind to calibration**: two
+models with identical ROC curves can differ by hundreds of false negatives at 0.50 purely from
+reporting confidence on different scales.
+
+**Take each text seed and lower its threshold until it matches GCB+DFG's recall (FN = 1,054):**
+
+| seed | threshold | FN | FP | vs DFG's FP 1,197 |
+|:---:|:---:|:---:|:---:|:---:|
+| 42 | 0.4496 | 1,054 | 1,198 | +1 |
+| 123 | 0.3849 | 1,054 | 1,166 | −31 |
+| 2025 | 0.4007 | 1,054 | 1,118 | −79 |
+| 7 | **0.1357** | 1,054 | 1,211 | +14 |
+| 2718 | 0.4084 | 1,054 | 1,192 | −5 |
+
+A dead heat: 3 of 5 do it with *fewer* false positives, and the spread at matched recall (93) is
+**smaller than the spread the same five models show at a fixed 0.50** (246). DFG buys nothing
+that a threshold change does not.
+
+**Report the range, not a single number.** The required threshold varies 0.14–0.45 across five
+runs of one model, so "lower it to 0.40" would be wrong — it is per-checkpoint, not a constant.
+
+**Why it varies: confidence is an unmanaged by-product of training.**
+
+| seed | very sure NOT (p<0.05) | unsure (0.2–0.8) | very sure YES (p>0.95) | ROC-AUC |
+|:---:|:---:|:---:|:---:|:---:|
+| 42 | 38.1% | 12.7% | 36.6% | 0.9575 |
+| 123 | 38.0% | 11.9% | 39.0% | 0.9574 |
+| 2025 | 35.3% | 13.0% | 30.3% | 0.9588 |
+| **7** | **46.5%** | **4.6%** | **41.3%** | **0.9549** |
+| 2718 | 39.1% | 13.1% | 35.3% | 0.9568 |
+
+Seed 7 puts 87.8% of its outputs in the "very sure" bands against 66–77% for its siblings, and
+holds only 4.6% in the uncertain middle. With almost nothing sitting just below 0.50, the
+threshold has to fall to 0.14 before it sweeps up enough cases. **And that confidence is not
+skill** — seed 7 has the *lowest* ROC-AUC of the five. Cross-entropy rewards being confidently
+right, so a run that drifts toward confidence early keeps being rewarded; nothing in the
+protocol targets calibration.
+
+**The number that makes the argument.** At a fixed 0.50 the five text runs differ from *each
+other* by **204 false negatives** (1,159–1,363). The paper attributes **240** to data-flow
+attention. Same order of magnitude — so the fixed-threshold comparison was substantially
+measuring where each checkpoint's confidence scale happened to settle.
 
 > ⚠️ **Do not write "DFG lowers ROC-AUC on all three."** It was true on the unfiltered set but is
 > not here: UniXcoder's ROC-AUC is 0.9581 text vs 0.9582 DFG, a dead heat.
@@ -290,25 +373,46 @@ both fixed it read +0.105% unfiltered, and now **+0.162% filtered, p=0.409**. Th
 artifact throughout. Keep the episode for Limitations: it shows how far a sub-percentage-point
 ablation moves under a training-protocol asymmetry.
 
-## 3.3 Table 3 — Training stability (multi-seed) ⚠️
+## 3.3 Table 3 — Training stability (multi-seed) ✅ **re-measured 2026-09-09**
 
-GraphCodeBERT text-only across 3 seeds. Split seed pinned at 42; only the training seed varies.
+GraphCodeBERT text-only, **five independent cold-start fine-tuning runs** from
+`microsoft/graphcodebert-base`. Split seed pinned at 42, so all five score the same
+duplicate-filtered 18,541 partition and seed variance is not confounded with partition
+variance. ~50 GPU-hours. Seed count fixed at five *before* any result was seen (§3.3a).
 
-> ❌ **Superseded 2026-09-04 — do not cite this table.** §3.3a explains why and what replaces it.
+| Seed | Accuracy | ROC-AUC | F1 | FN / FP | Epochs | Best val |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 42 | 87.7569% | 0.9575 | 0.8757 | 1,159 / 1,111 | 6 | 88.9854 @4 |
+| 123 | 87.9510% | 0.9574 | 0.8756 | 1,293 / 941 | 6 | 89.1417 @4 |
+| 2025 | 88.1614% | 0.9588 | 0.8770 | 1,325 / 870 | 6 | 89.2730 @4 |
+| 7 | 87.9834% | 0.9549 | 0.8749 | 1,363 / 865 | 8 | 88.9792 @6 |
+| 2718 | 87.7838% | 0.9568 | 0.8744 | 1,270 / 995 | 6 | 88.8479 @4 |
+| **mean ± sd** | **87.9273% ± 0.1644%** | **0.9571 ± 0.0014** | **0.8755 ± 0.0010** | — | — | — |
 
-| Seed | Accuracy | ROC-AUC | PR-AUC | F1 (macro) |
-|:---:|:---:|:---:|:---:|:---:|
-| 42 | 88.8278% | 0.9588 | 0.9596 | 0.8883 |
-| 123 | 88.8928% | 0.9609 | 0.9625 | 0.8889 |
-| 2025 | 89.0728% | 0.9596 | 0.9617 | 0.8907 |
-| **mean ± std** | **88.93% ± 0.10%** | **0.9598 ± 0.0009** | **0.9613 ± 0.0012** | **0.8893 ± 0.0010** |
+Range 0.4045pp. The sd is itself uncertain at n=5: **±0.0581pp**, 35% relative.
 
-This ±0.10% is the yardstick used throughout to judge whether a delta is noise, so its own
-status matters — and it does not survive inspection.
+**Table 1's text checkpoint (88.2692%) is not a typical draw from this procedure — it sits
+2.08 sd above its own mean**, above all five re-runs. It also has the smallest
+validation→test gap of the six (0.9208pp against 0.9958–1.2285pp): its margin is specific to
+the test set, which is the signature of a lucky draw rather than a better model.
 
-## 3.3a Why Table 3 is being re-run 🔄 **D2 decided 2026-09-04**
+Full verification, per-seed McNemar and the aggregation script's output:
+`results/test3/README.md`, `results/test3_multiseed_summary.txt`,
+`test_scripts/aggregate_test3.py`.
 
-**The ±0.10% above is not fine-tuning seed variance, and it is biased low.**
+> **The superseded ±0.10% table** (88.8278 / 88.8928 / 89.0728, mean 88.93% ± 0.10%) was
+> warm-started from our own fine-tuned checkpoint and is not fine-tuning seed variance. It is
+> archived with its provenance at `results/superseded/test3_warmstart/`. §3.3a records why it
+> was withdrawn. **Do not cite it.**
+
+## 3.3a Why Table 3 was re-run, and what came back ✅ **D2 closed 2026-09-09**
+
+> **Read this section as a record, not a plan.** It is kept in chronological order because the
+> reasoning matters: the defect that forced the re-run, the pre-registration written before any
+> result existed, a warmup bug that cost ~28 GPU-hours, and finally the answer. The answer is at
+> the end, under *"The answer — all five seeds in"*. The current Table 3 is §3.3.
+
+**The withdrawn ±0.10% is not fine-tuning seed variance, and it is biased low.**
 `test_scripts/superseded/test_3_multiseed_warmstart/*.ipynb` sets
 
 ```
@@ -445,6 +549,52 @@ Table 2's GCB finding stands and is better supported than it is today. If it com
 above 0.41pp**, the one statistically significant within-backbone result is inside seed noise, and
 §3.2 needs rewriting. That second outcome is live — a cold-start spread is normally several times
 a warm-start one — so this is a genuine test rather than a formality.
+
+### The answer — all five seeds in ✅ **2026-09-09**
+
+**The second outcome.** Five cold-start runs give mean **87.9273%**, sd **0.1644pp**, range
+0.4045pp (Table 3). Against the GCB+DFG checkpoint at 87.8593%:
+
+> effect **+0.0680pp**, t(4) = **0.925**, critical 2.776, **p = 0.4074 — not significant**.
+
+The 0.410pp GCB delta in Table 2 does not survive. It was one high draw of the text arm
+compared against one ordinary draw of the DFG arm.
+
+**Six runs of one procedure; exactly one clears 0.05, and it is the one that became Table 1.**
+
+| run | accuracy | Δ vs GCB+DFG | \|b−c\| | McNemar p |
+|---|---:|---:|---:|---:|
+| seed 2025 | 88.1614% | +0.302pp | 56 | 0.143 |
+| seed 7 | 87.9834% | +0.124pp | 23 | 0.567 |
+| seed 123 | 87.9510% | +0.092pp | 17 | 0.668 |
+| seed 2718 | 87.7838% | **−0.075pp** | 14 | 0.714 |
+| seed 42 | 87.7569% | **−0.102pp** | 19 | 0.624 |
+| **Table 1's checkpoint** | 88.2692% | +0.410pp | 76 | **0.037** |
+
+Two of the five carry the **wrong sign**. This is not an underpowered real effect; it is
+consistent with zero.
+
+**The comparison that settles it.** Seeds 42 and 2025 differ *only* in the training seed — same
+model, same code, same data, same partition. McNemar between them: **|b−c| = 75, p = 0.037** —
+the same signature as the architecture claim's |b−c| = 76, p = 0.037. Two runs of one model
+reproduce the paper's headline result. Seed-to-seed disagreement runs **6.4–7.8%** of samples;
+test-8 puts the GCB-text/GCB+DFG architecture difference at **7.00%**, inside that range. The
+architecture does not move more predictions than a reseed does.
+
+**More seeds cannot rescue it.** At the observed effect and sd, significance would need **~22
+seeds (~225 GPU-hours)**; across the sd's own uncertainty, 9–41. The noise is 2.4× the signal.
+The pre-registration commits us to reporting at n=5, and n=5 is the honest stopping point:
+extending now would be optional stopping in the other direction.
+
+**The prediction from seed 42 alone was right.** The single-comparison estimate σ ≈ 0.36pp was
+too high — the realised sd is 0.1644pp — but its *conclusion* held: 0.1644pp against a 0.0680pp
+effect is more than enough to swallow it. A σ estimate from one pair is not a variance estimate,
+and it should not be quoted as one; it was directionally useful and no more.
+
+**What this does to the paper.** §3.2 is rewritten below. The thesis is unchanged and better
+evidenced: no backbone shows a within-backbone difference distinguishable from run-to-run
+variation. §3.3a predicted this outcome would *support* the thesis rather than threaten it,
+and that is what happened.
 
 ## 3.4 Table 2b — Cross-architecture significance ✅ RESOLVED
 
@@ -824,7 +974,7 @@ length in the same run would confound the very comparison it exists to clean up.
 | Option | Cost | Effect |
 |---|---|---|
 | Disclose in Limitations, keep the runs | none | honest; reframes GCB/UniXcoder rows as a budget-allocation question |
-| Set GCB text-only to 384 and retrain | 1 run | CodeBERT and GCB share one convention; also re-opens D2. *(Corrected 2026-09-04: this row previously said "Table 3's seeds ran at 512" — they ran at 384. See §3.3a.)* |
+| Set GCB text-only to 384 and retrain | 1 run | CodeBERT and GCB share one convention. *(Corrected 2026-09-04: this row previously said "Table 3's seeds ran at 512" — the **warm-start** seeds ran at 384. The five cold-start seeds that replaced them do run at 512 train / 384 eval, matching Table 1 — so this option would now re-open Table 3, at 5 runs rather than 1. See §3.3a.)* |
 | Make all three uniform | several runs | requires retraining DFG arms too |
 
 ### Outcome of the retrain — 2026-08-12
@@ -1151,22 +1301,48 @@ Use these paragraphs directly. Numbers inside them are current as of 2026-08-04 
 > note here guessed the run had used UniXcoder+DFG at 1,125. Both are wrong. The clean test-7 run
 > used **GraphCodeBERT+DFG**, whose FN count is **1,054**, matching Table 1 for the same model.
 
+> ✅ **Strengthened 2026-09-09 — the null now has a measured resolution.** The standard rebuttal
+> to a null result is *"you simply lacked the power to detect the effect."* Table 3 answers it
+> with data rather than assertion: five cold-start runs of one model give sd **0.1644pp** and a
+> 0.4045pp range, so the study's resolution is stated, not assumed. Every observed DFG margin sits
+> below it, two of five seeds reverse the largest one's sign, and detecting an effect of the
+> observed size would require ~22 seeds. Add one sentence to the passage above:
+>
+> > "We quantify the resolution of this null: across five cold-start fine-tuning runs differing
+> > only in random seed, accuracy varies with a standard deviation of 0.16 percentage points, an
+> > order of magnitude larger than the mean DFG effect we measure (0.07 points)."
+>
+> This converts the weakest part of a null-result paper into one of its stronger ones, and it is
+> the reason §3.3a's re-run was worth ~50 GPU-hours.
+
 ## 6.2 Cross-backbone inconsistency
 
 *Attack*: "DFG helps one of your backbones — your null claim is wrong."
 
-> ⚠️ **Rewrite required.** The previous paragraph asserted DFG harms all three backbones
-> (−0.02%, −0.37%, −0.71%). After the Partition-N retrain, CodeBERT reverses to **+0.31% in
-> DFG's favour**. The attack this section anticipates is now the actual situation. Rewrite after
-> step 3b around this shape:
+> ✅ **Rewritten 2026-09-09.** Two earlier drafts of this passage are dead: the first asserted DFG
+> harms all three backbones (−0.02%, −0.37%, −0.71%); the second was written when CodeBERT had
+> reversed to DFG's favour. Both are superseded — the reversal was an artifact (§3.2), and Table 3
+> has since removed the remaining significance claim. The section no longer needs to defend an
+> inconsistency, because there is no longer an inconsistent result to defend.
 
-> "Across three encoder backbones, DFG augmentation fails to produce a consistent directional
-> effect: it slightly favours CodeBERT, and harms GraphCodeBERT (−0.37%) and UniXcoder (−0.71%).
-> A genuine structural advantage would produce consistent gains across all backbones. Instead
-> the sign of the effect depends on the backbone, and every magnitude is comparable to the
-> ±0.10% variation we measure across random seeds. Notably, in the one backbone where the
-> training budget was asymmetric it favoured the DFG arm — GraphCodeBERT+DFG received a 10-epoch
-> ceiling against text-only's 5 — and DFG still lost."
+> "Across three encoder backbones, DFG augmentation produces no effect distinguishable from
+> run-to-run variation. Text-only leads on accuracy in all three (+0.162%, +0.410%, +0.032%) and
+> ROC-AUC is flat throughout (+0.0015, +0.0013, −0.0001), but none of these margins survives the
+> training noise we measure directly: five cold-start fine-tuning runs of one model, differing
+> only in random seed, span 0.4045 percentage points with a standard deviation of 0.1644. The
+> largest single-run margin, GraphCodeBERT's +0.410%, falls to +0.068% (p = 0.407) when the
+> text arm is averaged over those five seeds, and two of the five reverse its sign. Two runs of
+> the identical model differing only in seed reach McNemar p = 0.037 against the DFG checkpoint —
+> the same value the single-run architecture comparison reports. A genuine structural advantage
+> would survive reseeding; this one does not."
+
+> **Why this is a stronger defence than the one it replaces.** The old paragraph had to explain
+> away a sign flip between backbones. The new one reports a single uniform finding across all
+> three and backs it with a directly measured noise floor rather than an asserted one. The
+> obvious reviewer question — *"is your null just underpowered?"* — is answered in §3.3a: the
+> effect is 0.068pp against 0.164pp of noise, two of five seeds carry the wrong sign, and
+> significance would require ~22 seeds. That is a null with a measured resolution, not an absence
+> of evidence.
 
 ## 6.3 No SOTA comparison
 
@@ -1698,9 +1874,31 @@ predicts.
 > This convergence suggests the performance ceiling on decompiled Android vulnerability
 > detection is determined by the data domain rather than model architecture."
 
-> "Our controlled ablation yields no consistent directional effect from DFG augmentation across
-> the three backbones; the sign of the effect depends on the backbone, and every magnitude is
-> comparable to the variation measured across random seeds."
+> ⚠️ **Superseded twice.** This sentence claimed *"the sign of the effect depends on the
+> backbone."* That stopped being true after the 2026-08-12 reruns — text-only leads all three
+> (+0.162%, +0.410%, +0.032%), with no sign flip. And "comparable to the variation measured
+> across random seeds" was, until 2026-09-09, an assertion resting on a warm-start number that
+> has since been withdrawn. Use this instead:
+
+> "Our controlled ablation yields no effect from DFG augmentation distinguishable from training
+> noise on any of the three backbones. Text-only attains the higher accuracy in all three
+> (+0.162%, +0.410%, +0.032%) and ROC-AUC is flat throughout (+0.0015, +0.0013, −0.0001), but we
+> measure the noise floor directly rather than assuming it: five cold-start fine-tuning runs of
+> a single configuration, differing only in random seed, span 0.40 percentage points with a
+> standard deviation of 0.16. Averaging the text arm over those five seeds reduces the largest
+> margin from +0.410% to +0.068% (p = 0.407), and two of the five reverse its sign. We therefore
+> report the DFG effect as null at a resolution of 0.16 percentage points."
+
+> **Companion sentence for the operating point** (§3.2a), which reviewers will otherwise read as
+> a surviving DFG benefit:
+
+> "DFG augmentation does consistently shift the operating point toward recall — fewer false
+> negatives at more false positives in all three backbones. This shift is a property of
+> calibration rather than discrimination: for every one of our five text-only seeds, lowering
+> the decision threshold reproduces the DFG model's recall at an equal or lower false-positive
+> count. The required threshold varies from 0.14 to 0.45 across seeds of the same
+> configuration, which is itself evidence that confidence calibration is an unmanaged by-product
+> of fine-tuning rather than a property of the architecture."
 
 ## 8.4 Limitations and qualitative analysis
 
@@ -1710,6 +1908,24 @@ predicts.
 > The mistakes reveal a coherent picture dominated by complete identifier obfuscation and
 > structural fragmentation — decompilation artifacts that degrade DFG signal before it reaches
 > the attention mechanism."
+
+> **Limitation to state explicitly — seeds on one arm only** (§3.3a). A reviewer will find this
+> if we do not declare it:
+
+> "Our seed-variance measurement covers the text-only arm: five cold-start fine-tuning runs
+> against a single DFG checkpoint, which is itself one draw from the same distribution. We
+> therefore establish that the text arm's own spread subsumes the observed DFG margins, not that
+> the two arms are statistically equivalent. A fully controlled design would seed both arms
+> (approximately 95 additional GPU-hours). We report the asymmetry rather than the stronger claim
+> it would license."
+
+> **And the calibration limitation**, which follows from §3.2a:
+
+> "Because all comparisons are scored at a fixed 0.50 decision threshold, differences in
+> confidence calibration between checkpoints appear as differences in false-negative and
+> false-positive counts. We quantify this: five seeds of one configuration differ from each other
+> by 204 false negatives at that threshold, against the 240 we measure between the GraphCodeBERT
+> text-only and DFG arms."
 
 ---
 
@@ -2238,3 +2454,14 @@ Consolidated 2026-08-04 from `README.md` (results sections), `RESEARCH_NOTES.md`
 `LIMITATIONS.md`, `after_inspection.md`, `analysis_results.md` and `instructions/README.md`.
 Contradictions between those files were resolved against the code and the result files; stale
 material was dropped rather than carried forward. The originals remain in git history.
+
+**2026-09-09 — Table 3 re-measured, and §3.2 rewritten.** Five cold-start seeds (~50 GPU-h)
+replaced the withdrawn warm-start ±0.10%. Sections changed: §3.2 (GCB significance withdrawn),
+§3.2a (new — the FN/FP trade shown to be a threshold setting), §3.3 (new Table 3), §3.3a (result
+recorded, D2 closed), §3.1 (noise floor 0.10 → 0.1644pp), §6.1 (null given a measured
+resolution), §6.2 (rewritten — no inconsistency left to defend), §8.3 and §8.4 (draft sentences
+and two new limitations), §1.1/§1.2/§1.3 and Part 0 (status).
+
+The net effect is that the paper **lost** its only statistically significant within-backbone
+result and **gained** a measured noise floor. Evidence: `results/test3/`,
+`results/test3_multiseed_summary.txt`, `results/superseded/test3_warmstart/`.
