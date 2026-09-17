@@ -596,6 +596,71 @@ evidenced: no backbone shows a within-backbone difference distinguishable from r
 variation. §3.3a predicted this outcome would *support* the thesis rather than threaten it,
 and that is what happened.
 
+## 3.3b Test 3b — the DFG arm, paired 🔄 **pre-registered 2026-09-18, not yet run**
+
+§3.3a measured seed variance on the **text** arm only and compared five runs against
+a single DFG checkpoint. That bounds the text arm's distribution around a fixed point;
+it does not compare two distributions. Two independent reviews raised it, and it is
+the sharpest remaining objection to the paper's central claim.
+
+`test_scripts/test_3b_dfg_multiseed/test-3b-dfgseed{42,123,2025,7,2718}.ipynb` supply
+the missing arm. The same five seeds, so the runs pair:
+
+> Δ_s = accuracy(text, seed s) − accuracy(DFG, seed s)
+
+### Pre-registration — fixed before any DFG seed was run
+
+- **n = 5**, seeds 42, 123, 2025, 7, 2718. Matching the text arm is what makes the
+  design paired; a different seed set would throw that away.
+- **Primary**: paired t-test on the five differences.
+- **Secondary**: TOST equivalence at **±0.25pp**, the bound §V-D already reports from
+  the one-sample version. Reusing the existing bound rather than choosing a new one
+  after seeing the data is the point of fixing it here.
+- **Reported at n = 5 regardless of outcome.** Adding seeds after seeing the result
+  would be optional stopping and would void the test — the same discipline that made
+  the text-arm study credible.
+- **A reversal is reported as a reversal.** If the DFG arm's distribution sits above
+  the checkpoint we compared against, the null weakens and we say so.
+
+### Three outcomes, and what each would mean
+
+| outcome | reading |
+|---|---|
+| mean Δ near zero, equivalent within ±0.25pp | the current conclusion holds and is now properly paired |
+| Δ significant but inside ±0.25pp | a real difference too small to matter — **report both**, and it is the most informative result available |
+| Δ significant and outside ±0.25pp | the null does not survive; §3.2 and §V need rewriting again |
+
+The second is easy to mishandle. A paired design removes the variance the two arms
+share at a given seed, so it is far more sensitive than the unpaired version; a tiny
+consistent gap can reach significance. Significance and practical equivalence are not
+in conflict, and `aggregate_test3b_paired.py` prints both so neither can be quoted
+alone.
+
+### Configuration and the one deliberate deviation
+
+Matched to `training_notebooks/re_train/graphcodebert-train-dfg.ipynb` — 384 code
+tokens plus 128 DFG nodes, micro-batch 16 × 2 accumulation for an effective 32,
+10 epochs / patience 2, 10% warmup, FP16, cold start from
+`microsoft/graphcodebert-base`.
+
+**One difference from that notebook, on purpose.** It sets
+`cudnn.deterministic = True`; the text-arm seed runs did not. Leaving it on would give
+this arm less run-to-run noise than the arm it is compared against, which is exactly
+the quantity under test. Both arms therefore run without it, and the notebooks say so.
+
+### Verified before release
+
+The split cell was executed against the corpus offline: it produces
+163,967 / 15,997 / 18,541 and its test indices are **identical, index for index**, to
+those the text-arm notebooks produce, so both arms score the same rows. The five
+notebooks are identical in executable content apart from the `SEED` line (verified by
+hash). Each carries a pre-flight block that fails closed on the partition and on the
+DFG actually reaching the model — empty-node rate, mask shape and density, code-to-node
+links, and node position IDs — because a DFG that silently fails to connect would
+produce a plausible-looking text-only run at a cost of ten GPU-hours.
+
+**Cost**: ~50 GPU-hours, five Kaggle sessions.
+
 ## 3.4 Table 2b — Cross-architecture significance ✅ RESOLVED
 
 | Comparison | Δ Accuracy | McNemar p | Verdict |
@@ -1465,6 +1530,15 @@ is a genuine interior maximum rather than a truncation artifact.
 > where precision is cheap to buy by declining to predict the rare class. **This makes the case
 > empirical rather than asserted**: F1 is not merely a different choice from ours, it is an
 > unusable objective for triage on this distribution.
+
+> ⚠️ **The manuscript no longer cites the GraphCodeBERT column (2026-09-17).** Its figures —
+> F1 optimum 0.90, recall 77.66%, FN 233 — came from the 2026-08-30 sweep, and test-6 was
+> later re-pointed to UniXcoder, so nothing under `results/` reproduces them;
+> `test-6-imbalanced-eval.py` still carries a warning saying exactly that. The measurement was
+> real and is kept here as a record, but a paper should not cite a number whose artifact no
+> longer exists. §VII of the manuscript now argues the degeneracy from the metric's behaviour on
+> a 90/10 split rather than from a second checkpoint. **If the two-configuration claim is wanted
+> back, re-run the GraphCodeBERT sweep and save the output.**
 
 **Disclose the cost plainly.** Precision at 0.45 is **0.4798** — slightly under half of what the
 scanner flags is a false alarm. Earlier drafts called this "a high-precision triage filter"; the
