@@ -1,0 +1,27 @@
+Test 3b: Multi-Seed Robustness, DFG arm -- seed 123
+==============================================================
+Model      : GraphCodeBERT + DFG-aware attention
+Start from : microsoft/graphcodebert-base  (cold start, public weights)
+Budget     : 384 code + 128 DFG nodes
+Batch      : 16 x 2 = 32 effective
+Training   : 10 epochs / patience 2, lr 2e-05, 10% warmup
+Test set   : 18,541 samples, duplicate-filtered
+Stopped    : time budget at epoch 9: elapsed 10.71h, another epoch would reach 11.90h (after 9 epochs)
+
+Accuracy   : 87.7677%
+ROC-AUC    : 0.9523
+F1         : 0.8751
+FN / FP    : 1,207 / 1,061
+
+Per-epoch validation accuracy:
+  epoch  1: val_acc=85.0534%  train_loss=0.3655  (1.20h)
+  epoch  2: val_acc=87.3164%  train_loss=0.2723  (2.39h)
+  epoch  3: val_acc=88.1415%  train_loss=0.2349  (3.58h)
+  epoch  4: val_acc=88.2916%  train_loss=0.1981  (4.77h)
+  epoch  5: val_acc=88.3416%  train_loss=0.1624  (5.96h)
+  epoch  6: val_acc=88.1853%  train_loss=0.1322  (7.15h)
+  epoch  7: val_acc=88.3478%  train_loss=0.1079  (8.34h)
+  epoch  8: val_acc=88.5416%  train_loss=0.0878  (9.52h)
+  epoch  9: val_acc=88.2853%  train_loss=0.0739  (10.71h)
+
+Provenance: test_scripts/test_3b_dfg_multiseed/

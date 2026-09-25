@@ -1,0 +1,35 @@
+Test 3b -- paired multi-seed comparison, text vs DFG
+==============================================================================
+Seeds paired : 5  (7, 42, 123, 2025, 2718)
+
+  seed        text         DFG      delta   text FN   DFG FN
+------------------------------------------------------------------------------
+     7    87.9834%    87.7677%   +0.2157pp     1,363      983
+    42    87.7569%    87.9348%   -0.1780pp     1,159    1,219
+   123    87.9510%    87.7677%   +0.1834pp     1,293    1,207
+  2025    88.1614%    87.9564%   +0.2050pp     1,325    1,363
+  2718    87.7838%    87.7515%   +0.0324pp     1,270    1,438
+
+Paired t-test on the per-seed differences
+------------------------------------------------------------------------------
+  mean difference   +0.0917pp   (text minus DFG)
+  sd of differences 0.1680pp
+  seeds favouring text: 4/5
+  t(4) = 1.221   critical 2.776   p = 0.2893
+  verdict: not significant at 0.05
+
+TOST equivalence, pre-registered bound +/-0.25pp
+------------------------------------------------------------------------------
+  lower: t = 4.548  p = 0.0052
+  upper: t = -2.107  p = 0.0514   (one-sided critical 2.132)
+  verdict: NOT equivalent within +/-0.25pp at alpha = 0.05
+
+Each arm on its own
+------------------------------------------------------------------------------
+  text  mean 87.9273%   sd 0.1644pp   range 0.4045pp
+  DFG   mean 87.8356%   sd 0.1009pp   range 0.2050pp
+
+  A paired design removes whatever variance the two arms share at a given
+  seed, so the sd of the differences may be smaller than either arm's own.
+
+Provenance: aggregate_test3b_paired.py over results/test3 and results/test3b
