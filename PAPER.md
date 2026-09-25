@@ -108,6 +108,7 @@ re-runs in §1.1, which were always part of the plan.
 | 5 | Re-run test-8 | ✅ **done 2026-08-20** — **Table 2b's artifact collapsed** |
 | 6 | Re-run test-5 | ✅ **done 2026-08-19** — chart via `make_baseline_chart.py` |
 | 7 | Re-run test-3 ×5 cold-start seeds | ✅ **done 2026-09-09** — ~50 GPU-h. Table 3 re-measured; **the GCB delta did not survive** (§3.3a) |
+| 8 | Test-3b: DFG arm ×5 cold-start seeds, paired | ✅ **done 2026-09-25** — ~44 GPU-h. Paired p = 0.29; ±0.25pp equivalence **not** established (upper p = 0.0514) (§3.3b) |
 
 **Cost to finish**: 6 evaluation re-runs, plus 1 GPU run if D7 is closed by retraining. Table 3
 is done (5 cold-start seeds, 2026-09-09).
@@ -116,7 +117,8 @@ is done (5 cold-start seeds, 2026-09-09).
 
 | Claim | Evidence | Status |
 |---|---|---|
-| **DFG provides no consistent benefit** | within-backbone comparisons, Tables 2–3 | ✅ **safe, and now stronger** — no backbone differs from run-to-run variation (§3.3a) |
+| **DFG provides no consistent benefit** | within-backbone comparisons, Tables 2–3 | ✅ **safe, and now paired** — no backbone differs from run-to-run variation (§3.3a); five seeds per arm, paired p = 0.29, one-sided 95% bound on a DFG gain +0.068pp (§3.3b) |
+| Text and DFG equivalent within ±0.25pp | test-3 one-sample TOST; test-3b paired TOST | ❌ **not established 2026-09-25** — held against the fixed checkpoint (p = 0.0062 / 0.0343), fails paired (upper p = 0.0514). Do not claim equivalence (§3.3b) |
 | DFG lowers accuracy **and** ROC-AUC on all three backbones | Table 2 | ⚠️ **weakened 2026-09-09** — the *direction* holds on all three, but no accuracy delta survives seed noise; the GCB row's p = 0.037 is withdrawn (§3.2, §3.3a). ROC-AUC deltas were already flat |
 | DFG trades false negatives for false positives | Table 2 | ⚠️ **reframed 2026-09-09** — the trade is real and uniform, but it is a **threshold setting**: every text seed reaches DFG's recall at the same FP cost by moving its cutoff (§3.2a) |
 | Training stability ±0.16pp | test-3, 5 cold-start seeds | ✅ **measured 2026-09-09** — mean 87.9273%, sd 0.1644pp, range 0.4045pp (§3.3). Replaces the withdrawn warm-start ±0.10% |
@@ -596,7 +598,7 @@ evidenced: no backbone shows a within-backbone difference distinguishable from r
 variation. §3.3a predicted this outcome would *support* the thesis rather than threaten it,
 and that is what happened.
 
-## 3.3b Test 3b — the DFG arm, paired 🔄 **pre-registered 2026-09-18, not yet run**
+## 3.3b Test 3b — the DFG arm, paired ✅ **run 2026-09-25 — not significant, and ±0.25pp equivalence NOT established** (result at the end of this section)
 
 §3.3a measured seed variance on the **text** arm only and compared five runs against
 a single DFG checkpoint. That bounds the text arm's distribution around a fixed point;
@@ -659,7 +661,68 @@ DFG actually reaching the model — empty-node rate, mask shape and density, cod
 links, and node position IDs — because a DFG that silently fails to connect would
 produce a plausible-looking text-only run at a cost of ten GPU-hours.
 
-**Cost**: ~50 GPU-hours, five Kaggle sessions.
+**Cost**: ~50 GPU-hours, five Kaggle sessions (actual: 43.5h of training).
+
+### Result — 2026-09-25 ✅
+
+Everything above this heading was written before any DFG seed ran and is left as it
+was. Evidence: `results/test3b/` (README records the arrival checks: every
+`probs.npy` reproduces its JSON against `results/predictions/test_labels.npy`, every
+JSON matches its Kaggle log, configs identical, all arrays distinct) and
+`results/test3b_paired_summary.txt`.
+
+| seed | text | DFG | Δ (text − DFG) | DFG run ended by |
+|---|---:|---:|---:|---|
+| 42 | 87.7569% | 87.9348% | −0.1780pp | early stopping, epoch 7 |
+| 123 | 87.9510% | 87.7677% | +0.1834pp | **time budget, epoch 9** |
+| 2025 | 88.1614% | 87.9564% | +0.2050pp | early stopping, epoch 7 |
+| 7 | 87.9834% | 87.7677% | +0.2157pp | early stopping, epoch 7 |
+| 2718 | 87.7838% | 87.7515% | +0.0324pp | early stopping, epoch 5 |
+
+- **Primary, paired t-test:** mean Δ **+0.0917pp** (text minus DFG), sd 0.1680pp,
+  t(4) = 1.221, **p = 0.2893 — not significant.** 4 of 5 seeds favour text.
+- **Secondary, TOST at ±0.25pp:** lower p = 0.0052, upper p = **0.0514 — not
+  equivalent at α = 0.05.** It rejects "DFG better by 0.25pp or more"; it narrowly
+  fails to reject "text better by 0.25pp or more".
+
+**It lands in a cell the outcome table did not list:** not significant *and* not
+equivalent. All three rows assumed one of the two tests would be decisive. The miss is
+recorded here rather than as a fourth row added after the fact.
+
+**What it changes**
+
+- **Survives, and on better evidence:** *DFG gives no consistent benefit.* The one
+  TOST side that passes is the one against a DFG gain (p = 0.0052). Descriptively,
+  from the same t(4) distribution, the 95% CI on Δ is **[−0.117, +0.300]pp** and the
+  one-sided 95% bound on any DFG *gain* is **+0.068pp**. What stays unresolved is
+  whether DFG is slightly *worse*.
+- **Does not survive:** *the two arms are statistically equivalent within ±0.25pp*
+  (manuscript §V-D). That rested on the one-sample TOST against a fixed checkpoint
+  (p = 0.0062 / 0.0343). The paired design, which §VIII names as the test that would
+  settle it, fails on the upper side. The manuscript says so now.
+- **Not done, deliberately:** widening the bound, dropping seed 123, adding seeds.
+  After seeing p = 0.0514, each is the move the pre-registration exists to rule out.
+
+**Seed 123 ran into the clock.** After epoch 9 (patience 1/2, best at epoch 8) the
+predictive budget projected 11.90h against 11.0h and stopped. It is the only run in
+either arm not ended by early stopping. The text arm's effective ceiling was lower
+(8 epochs at 1.34h/epoch), but it never needed it: best epochs 4, 4, 4, 4, 6, against
+DFG's 5, 8, 5, 5, 3. Truncation could only have cost seed 123 a better checkpoint,
+which moves its Δ toward text, the side that failed. Disclosed; not re-run, not dropped.
+
+**Each arm on its own.** DFG mean **87.8356%, sd 0.1009pp** (text 87.9273%, 0.1644pp).
+Table 2's DFG checkpoint (87.8593%) sits 0.23 sd above its own arm's mean, a typical
+draw. Table 1's text checkpoint sat 2.08 sd above its arm's mean (§3.3a).
+
+**False negatives vary within the DFG arm too:** 983 to 1,438 across the five seeds
+(mean 1,242; text arm 1,159 to 1,363, mean 1,282). Table 2's DFG count (1,054) sits
+inside that range. This is consistent with §3.2a: the FN/FP split belongs to the run
+and its threshold, not to the architecture.
+
+**Pairing bought little.** The sd of the differences (0.168pp) is close to what two
+independent arms give (√(0.1644² + 0.1009²) = 0.193pp). A shared seed number does not
+make randomness shared across two input pipelines, so the test's sensitivity is close
+to the unpaired version's.
 
 ## 3.4 Table 2b — Cross-architecture significance ✅ RESOLVED
 
@@ -1983,15 +2046,15 @@ predicts.
 > structural fragmentation — decompilation artifacts that degrade DFG signal before it reaches
 > the attention mechanism."
 
-> **Limitation to state explicitly — seeds on one arm only** (§3.3a). A reviewer will find this
-> if we do not declare it:
+> ~~**Limitation to state explicitly — seeds on one arm only** (§3.3a).~~ **Closed 2026-09-25**:
+> both arms are now seeded (§3.3b). The limitation that replaces it:
 
-> "Our seed-variance measurement covers the text-only arm: five cold-start fine-tuning runs
-> against a single DFG checkpoint, which is itself one draw from the same distribution. We
-> therefore establish that the text arm's own spread subsumes the observed DFG margins, not that
-> the two arms are statistically equivalent. A fully controlled design would seed both arms
-> (approximately 95 additional GPU-hours). We report the asymmetry rather than the stronger claim
-> it would license."
+> "Equivalence within ±0.25 percentage points, our pre-registered bound, is not established:
+> the paired test rejects a DFG advantage of that size but narrowly fails to reject a text-only
+> advantage of it (p = 0.051). One of the five DFG runs was stopped by the session time limit
+> rather than by early stopping; truncation can only have lowered it, and so can only have
+> widened the gap on the side that failed. We report both as they fell rather than adjust the
+> bound or the seed set after the fact."
 
 > **And the calibration limitation**, which follows from §3.2a:
 
@@ -2539,3 +2602,10 @@ and two new limitations), §1.1/§1.2/§1.3 and Part 0 (status).
 The net effect is that the paper **lost** its only statistically significant within-backbone
 result and **gained** a measured noise floor. Evidence: `results/test3/`,
 `results/test3_multiseed_summary.txt`, `results/superseded/test3_warmstart/`.
+
+**2026-09-25 — Test 3b run: the DFG arm seeded, and the comparison paired.** Five cold-start
+DFG seeds (~44 GPU-h), pre-registered 2026-09-18. Paired p = 0.29; TOST at the pre-registered
+±0.25pp fails on the upper side (p = 0.0514), so the manuscript's equivalence claim is withdrawn
+and "no DFG gain above +0.068pp" (one-sided 95%) replaces it. Sections changed: §3.3b (result),
+§1.1 and §1.2 (status), §8.4 (the seeds-on-one-arm limitation closed and replaced). Evidence:
+`results/test3b/`, `results/test3b_paired_summary.txt`.
