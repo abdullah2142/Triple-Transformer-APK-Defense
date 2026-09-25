@@ -719,6 +719,15 @@ draw. Table 1's text checkpoint sat 2.08 sd above its arm's mean (§3.3a).
 inside that range. This is consistent with §3.2a: the FN/FP split belongs to the run
 and its threshold, not to the architecture.
 
+**The manuscript's noise band (Figure 4) now uses both arms' measured spread.** Every
+single-run margin is a difference of one run from each configuration, so its seed noise is
+√(0.1644² + 0.1009²) = **0.193pp, 95% ±0.378** (was 0.1644·√2 = 0.2325, ±0.4557, which
+assumed the DFG arm varies as much as text; it varies less). Consequence: the two margins at
+p < 0.05, GCB within-backbone +0.410 and GCB+DFG vs UniX+DFG −0.453, now sit **outside** the
+band, at 108% and 120%. The paper no longer says every margin is inside it. The GCB one falls
+to 0.09 when reseeded; the cross-architecture one was never reseeded (UniXcoder's variance is
+unmeasured) and is reported as outside, not explained away. Decided 2026-09-25.
+
 **Pairing bought little.** The sd of the differences (0.168pp) is close to what two
 independent arms give (√(0.1644² + 0.1009²) = 0.193pp). A shared seed number does not
 make randomness shared across two input pipelines, so the test's sensitivity is close
