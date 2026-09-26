@@ -110,8 +110,8 @@ re-runs in §1.1, which were always part of the plan.
 | 7 | Re-run test-3 ×5 cold-start seeds | ✅ **done 2026-09-09** — ~50 GPU-h. Table 3 re-measured; **the GCB delta did not survive** (§3.3a) |
 | 8 | Test-3b: DFG arm ×5 cold-start seeds, paired | ✅ **done 2026-09-25** — ~44 GPU-h. Paired p = 0.29; ±0.25pp equivalence **not** established (upper p = 0.0514) (§3.3b) |
 
-**Cost to finish**: 6 evaluation re-runs, plus 1 GPU run if D7 is closed by retraining. Table 3
-is done (5 cold-start seeds, 2026-09-09).
+**Cost to finish: nothing left to run (2026-09-26).** Every experiment the paper reports is done.
+D5, D7 and D9 were closed by disclosure rather than retraining (§1.3).
 
 ## 1.2 What the paper can and cannot claim today
 
@@ -120,13 +120,14 @@ is done (5 cold-start seeds, 2026-09-09).
 | **DFG provides no consistent benefit** | within-backbone comparisons, Tables 2–3 | ✅ **safe, and now paired** — no backbone differs from run-to-run variation (§3.3a); five seeds per arm, paired p = 0.29, one-sided 95% bound on a DFG gain +0.068pp (§3.3b) |
 | Text and DFG equivalent within ±0.25pp | test-3 one-sample TOST; test-3b paired TOST | ❌ **not established 2026-09-25** — held against the fixed checkpoint (p = 0.0062 / 0.0343), fails paired (upper p = 0.0514). Do not claim equivalence (§3.3b) |
 | DFG lowers accuracy **and** ROC-AUC on all three backbones | Table 2 | ⚠️ **weakened 2026-09-09** — the *direction* holds on all three, but no accuracy delta survives seed noise; the GCB row's p = 0.037 is withdrawn (§3.2, §3.3a). ROC-AUC deltas were already flat |
-| DFG trades false negatives for false positives | Table 2 | ⚠️ **reframed 2026-09-09** — the trade is real and uniform, but it is a **threshold setting**: every text seed reaches DFG's recall at the same FP cost by moving its cutoff (§3.2a) |
+| DFG trades false negatives for false positives | Table 2 | ⚠️ **reframed 2026-09-09** — the trade is real and uniform across backbones, but it is a **threshold setting**: every text seed reaches DFG's recall at the same FP cost by moving its cutoff (§3.2a). **2026-09-25: it does not survive reseeding the DFG arm** — DFG seeds span 983–1,438 FN, and only 2 of 5 fall below the same-seed text run (§3.3b) |
 | Training stability ±0.16pp | test-3, 5 cold-start seeds | ✅ **measured 2026-09-09** — mean 87.9273%, sd 0.1644pp, range 0.4045pp (§3.3). Replaces the withdrawn warm-start ±0.10% |
 | Transformers beat TF-IDF | test-5 | ✅ both on 18,541: baselines 83.68/84.83 vs transformers 87.52–88.34 |
 | Cross-architecture gap (Table 2b) | test-8 | ✅ **resolved** — collapsed to +0.34%, p=0.106. Retire *"model choice matters more than DFG"* (§3.4) |
 | Per-source generalisation (Table 4) | test-4 | ✅ **re-run 2026-08-20** on GCB text-only, filtered (§3.5) |
-| Deployment behaviour (Table 5) | test-6 | ❌ contaminated partition *and* model changed |
+| Deployment behaviour (Table 5) | test-6 | ✅ **re-run 2026-09-01** on UniXcoder text-only at 0.45, the deployed configuration, filtered partition. Checked 2026-09-26: every figure in the manuscript's sweep and imbalance tables matches `results/test6_imbalanced_results.txt` |
 | Why DFG fails (Section 8) | test-7 | ✅ **re-run 2026-08-15, re-derived 2026-09-02** — 1,054 FNs on the filtered partition, distribution rebuilt (§7.1) |
+| The failures belong to the inputs, not the architecture | test-7b; `fn_overlap.py` over 16 models | ✅ **2026-09-25** — text/DFG false-negative overlap (Jaccard 0.575) matches seed/seed (0.572–0.597); 329 samples defeat all 16 models, including 16 of the 20 hand-read (§7.8c) |
 | Real-APK calibration (Test 9) | scanner reports | ✅ **safe** — no split dependency |
 
 **The headline result is safe; much of its supporting evidence is not.** That distinction drives
@@ -140,11 +141,11 @@ everything in Part 5.
 | ~~D2~~ | ~~Table 3: re-run at the new ceiling~~ — **closed 2026-09-09**: five cold-start seeds run (~50 GPU-h). Table 3 re-measured at sd 0.1644pp, and **Table 2's GCB delta did not survive** (§3.3a) | — | §3.3a |
 | ~~D3~~ | ~~Scanner ships GCB+DFG~~ — **retired 2026-08-12: the premise was false.** It ran GraphCodeBERT **text-only** and contains no DFG code at all. *Superseded 2026-08-31: the scanner was moved to UniXcoder text-only (§5.6); the point that it was never a DFG model stands* | — | §5.5 |
 | ~~D4~~ | ~~Filtered vs unfiltered Table 1~~ — **settled 2026-08-20**: Table 1 is the filtered 18,541 from test-2; `results/models/*.txt` are unfiltered per-model figures and must not be mixed in | — | §3.1 |
-| D5 | Sequence lengths differ between the arms of two backbones — disclose, or retrain to match | Tables 1–2, Section 4 | §4.3 |
+| ~~D5~~ | ~~Sequence lengths differ between the arms of two backbones~~ — **closed 2026-09-26 by disclosure**: manuscript §IV-D (`sec:asym`) and §VIII. The paired seed runs inherit it (text trains at 512, DFG at 384 + 128), so §3.3b compares the configurations *with* this asymmetry; it does not remove it | — | §4.3 |
 | ~~D6~~ | ~~Best model changed~~ — **settled 2026-08-31**: no model is identifiably best (§3.1). The scanner instantiates **UniXcoder text-only**, and test-6 matches it. test-4 got its text-only path in `daa49a1` and stays on GCB text-only, which is fine — only test-6, the scanner and test-9 need to agree (§5.6) | — | §5.6 |
-| **D7** | **GCB+DFG trains at effective batch 32 vs its text arm's 16 — retrain to match, or disclose?** | Table 2 GCB row | §4.3 |
+| ~~D7~~ | ~~GCB+DFG trains at effective batch 32 vs its text arm's 16~~ — **closed 2026-09-26 by disclosure**: manuscript §IV-D and §V-F. Like D5, the paired seed runs inherit it (16 vs 16 × 2), so it travels with §3.3b's result rather than being tested by it | — | §4.3 |
 | ~~D8~~ | ~~Threshold disagreement~~ — **settled 2026-08-30 on 0.45**, matching the deployed scanner. test-6 and test-9 moved to it. Chosen for recall, not F1 (§6.7) | — | §6.7 |
-| **D9** | **LVDAndro windowing is broken (§3.5b): ±5 rows over a per-line CSV, so 83.3% of records are not valid Java and a `Log.x()` regex reproduces 82.95% of labels. Rebuild the corpus and retrain all six, or disclose and restrict what Table 4's LVDAndro row is used for?** | Table 4 LVDAndro row, §6.6 | §3.5b |
+| ~~D9~~ | ~~LVDAndro windowing is broken (§3.5b)~~ — **closed 2026-09-26 by disclosure and restriction**: manuscript §III-F (`sec:quality`) states the defect and its 16.7% brace-balance figure, §V-H states the `Log.x()` shortcut and draws no Android capability claim from the LVDAndro row, §VIII lists both. The within-backbone ablation is unaffected (byte-identical inputs to both arms). A rebuilt corpus is named as the clearest extension | — | §3.5b |
 
 ---
 
@@ -837,9 +838,10 @@ between two unclosed method signatures and ends mid-expression on `return String
   connect anonymised tokens" — but it must be presented as a defect we found in our own pipeline,
   not as a designed contribution.
 
-**Not yet decided** — see **D8**. Rebuilding the LVDAndro portion with a source-line-aware window
-is the correct fix and would require regenerating the corpus and retraining all six models. The
-alternative is to disclose and restrict what the row is used for.
+**Decided 2026-09-26 — disclose and restrict (D9).** Rebuilding the LVDAndro portion with a
+source-line-aware window is the correct fix and would require regenerating the corpus and
+retraining all six models; the manuscript instead states the defect and draws no Android
+capability claim from the row. (This line previously pointed at D8, the threshold decision, in error.)
 
 > ### ⚠️ Juliet stays at 100% — and duplication does not explain it
 >
@@ -1081,7 +1083,7 @@ either ablation. UniXcoder's pair stays at 5 / 2 with FP32 evaluation, internall
 - **Stored outputs cleared** on both, since the source no longer matches them. The superseded
   runs' figures are preserved in `results/models/*.txt` and in the trajectory table above.
 
-### ⚠️ Finding 4 — sequence lengths are not uniform either (2026-08-04, UNRESOLVED)
+### ⚠️ Finding 4 — sequence lengths are not uniform either (2026-08-04; disclosed, D5 closed 2026-09-26)
 
 Read from the `Args` block of all six notebooks:
 
@@ -1143,7 +1145,7 @@ The two text arms gained, as predicted. **CodeBERT+DFG lost 0.24pp despite a hig
 validation accuracy (88.71% against 88.32%)** — a validation/test divergence worth a sentence in
 Limitations, not a defect.
 
-### ⚠️ Finding 5 — effective batch size is not uniform either (2026-08-12, UNRESOLVED → D7)
+### ⚠️ Finding 5 — effective batch size is not uniform either (2026-08-12; disclosed, D7 closed 2026-09-26)
 
 Read from the `Args` blocks and confirmed in the GCB+DFG run log, which prints
 `Gradient accumulation steps = 2 / Effective batch size = 32`:
@@ -1183,7 +1185,7 @@ applied.** Settle before writing Section 3.
 
 **D2 — decided 2026-09-04: re-run.** See §3.3a. The old notebooks are superseded by
 `test_scripts/test_3_multiseed/`, which cold-starts from `microsoft/graphcodebert-base`, trains
-at 10 / 2, and scores the filtered 18,541. One notebook per seed, three sessions pending.
+at 10 / 2, and scores the filtered 18,541. One notebook per seed; all five run by 2026-09-09 (§3.3a).
 
 ## 4.4 Historical note
 
@@ -1229,7 +1231,7 @@ notebooks with their outputs are `training_notebooks/re_train/codebert-{train-te
 Re-grading the old checkpoints was not an option — they were trained on B, which overlaps N's
 test set, so no honest test partition remained for them.
 
-## 5.2 Problem 2 — Tests 4, 6, 7 built Partition S ✅ FIXED IN CODE, RE-RUNS PENDING
+## 5.2 Problem 2 — Tests 4, 6, 7 built Partition S ✅ FIXED IN CODE, ALL THREE RE-RUN (§1.1 step 2)
 
 ```
 test_S overlapping the true test set :  2,018  (10.09%)
@@ -2647,3 +2649,9 @@ DFG seeds (~44 GPU-h), pre-registered 2026-09-18. Paired p = 0.29; TOST at the p
 and "no DFG gain above +0.068pp" (one-sided 95%) replaces it. Sections changed: §3.3b (result),
 §1.1 and §1.2 (status), §8.4 (the seeds-on-one-arm limitation closed and replaced). Evidence:
 `results/test3b/`, `results/test3b_paired_summary.txt`.
+
+**2026-09-26 — Nothing left to run; open decisions closed.** D5, D7 and D9 closed by disclosure,
+matching what the manuscript already does, with the note that the paired seed runs inherit D5 and
+D7. §1.2's Table 5 row corrected (it still read ❌ after test-6 was re-run on 2026-09-01), the FN/FP
+row updated for the DFG seeds, and a row added for §7.8c. Four stale "pending"/"unresolved"
+markers cleared. The manuscript abstract was cut from 302 to 247 words (IEEE Access: 250).
