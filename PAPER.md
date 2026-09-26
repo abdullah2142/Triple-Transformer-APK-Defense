@@ -1960,6 +1960,35 @@ high-confidence end. Malformed input does not merely cause errors; it causes *co
 That corroborates §7.1a on a second model, and is exactly what §7.4's re-attributed reading
 predicts.
 
+### 7.8c The seed control — is 5.6× more than reseeding gives? ✅ **2026-09-25, in the paper (§VI-B)**
+
+§7.8a's 5.6× only shows the failures belong to the inputs if two architectures overlap as much as
+two reseeds of **one** architecture. With the ten seed runs (§3.3a, §3.3b) that control is now
+available, CPU-only. `test_scripts/fn_overlap.py` → `results/fn_overlap_summary.txt`: sixteen
+models (six Table 2 checkpoints + ten seeds), all at **0.50**, same 18,541 rows (every array's
+accuracy re-verified against `test_labels.npy` before use).
+
+| pairing | pairs | Jaccard, mean [range] | enrichment |
+|---|---:|---|---:|
+| GCB text-only, seed vs seed | 10 | 0.597 [0.556, 0.636] | 5.4× |
+| GCB + DFG, seed vs seed | 10 | 0.572 [0.524, 0.653] | 5.4× |
+| GCB text seed vs GCB DFG seed | 25 | **0.575** [0.528, 0.627] | 5.3× |
+| Table 2, text vs DFG within backbone | 3 | 0.611 [0.582, 0.634] | 5.8× |
+| Table 2, different backbone, same arm | 6 | 0.541 [0.506, 0.601] | 5.4× |
+| Table 2, different backbone, different arm | 6 | 0.530 [0.512, 0.575] | 5.3× |
+
+**Turning DFG on or off changes which samples fail no more than reseeding does** (0.575 against
+0.572–0.597). Changing backbone lowers overlap a little (0.53–0.54), still 5.3× chance. At a
+matched 0.50 threshold the §7.8a pair shares 770 (Jaccard 0.513, 5.5×), so the 0.45/0.50 mismatch
+in §7.8a was not doing the work.
+
+**A core no model detects:** 329 of 9,153 vulnerable samples are missed by all sixteen (3.6%;
+independence predicts ~1e-10). They are 31.2% of GCB+DFG's 1,054 false negatives, held more
+confidently (median P(safe) 0.988 vs 0.919), and **contain 16 of the 20 hand-read samples** of
+§7.1 — so Section 8's patterns describe failures common to every configuration, not quirks of the
+one model they were drawn from. By source, 49.3% of GCB+DFG's LVDAndro false negatives are in the
+core, against 35.3% of Draper's and 20.8% of Devign's.
+
 > **Method note — confirmed on GPU 2026-09-04.** Test-7b was first derived on CPU from
 > `results/predictions/test_probs_unixcoder_text.npy`, saved by test-2's 2026-08-20 run. It has
 > since been re-run properly: `test_scripts/test-7b-qualitative-scanner-model.py` loaded the

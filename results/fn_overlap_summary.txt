@@ -1,0 +1,32 @@
+False-negative overlap across 16 models, all at threshold 0.50
+==============================================================================
+Test rows 18,541; vulnerable 9,153. False negatives per model: 983 to 1,438.
+
+comparison                                   pairs  Jaccard mean      [min, max]  enrich.
+-----------------------------------------------------------------------------------------
+Same configuration, different seed
+  GCB text-only, seed vs seed                   10         0.597  [0.556, 0.636]     5.4x
+  GCB + DFG, seed vs seed                       10         0.572  [0.524, 0.653]     5.4x
+Text-only vs DFG, same backbone
+  GCB text seed vs GCB DFG seed (all 25)        25         0.575  [0.528, 0.627]     5.3x
+  Table 2, text vs DFG within backbone           3         0.611  [0.582, 0.634]     5.8x
+Different backbone
+  Table 2, same arm                              6         0.541  [0.506, 0.601]     5.4x
+  Table 2, different arm                         6         0.530  [0.512, 0.575]     5.3x
+
+UniXcoder text @0.45 vs GCB+DFG @0.50 (test-7b): shared 750, Jaccard 0.514, enrichment 5.6x
+UniXcoder text @0.50 vs GCB+DFG @0.50 (matched): shared 770, Jaccard 0.513, enrichment 5.5x
+
+Missed by all 16 models: 329 of 9,153 vulnerable samples (3.6%); independent errors would give 1.05e-10.
+  share of graphcodebert dfg's 1,054 false negatives: 31.2%
+  share of unixcoder text's 1,217 false negatives: 27.0%
+
+GraphCodeBERT + DFG false negatives that every model misses
+------------------------------------------------------------------------------
+  LVDAndro    35 of   71  (49.3%)
+  Draper     218 of  618  (35.3%)
+  Devign      76 of  365  (20.8%)
+  median P(safe): core 0.988, all 1,054 false negatives 0.919
+  of the 20 most confident (read by hand in the paper): 16 are in the core
+
+Provenance: test_scripts/fn_overlap.py
